@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:jpa="http://www.springframework.org/schema/data/jpa"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           https://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/context
+           https://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/mvc
+           https://www.springframework.org/schema/mvc/spring-mvc.xsd
+           http://www.springframework.org/schema/tx
+           https://www.springframework.org/schema/tx/spring-tx.xsd
+           http://www.springframework.org/schema/data/jpa
+           https://www.springframework.org/schema/data/jpa/spring-jpa.xsd">
+
+    <!-- 1. Activation de Spring MVC (gestion des requêtes REST, conversion JSON avec Jackson) -->
+    <mvc:annotation-driven />
+
+    <!-- 2. Chargement des propriétés externes pour la base de données -->
+    <context:property-placeholder location="classpath:db.properties" ignore-resource-not-found="true" />
+
+    <!-- 3. Source de données (PostgreSQL) -->
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="${db.driver:org.postgresql.Driver}" />
+        <property name="url" value="${db.url:jdbc:postgresql://localhost:5432/wegrow_db}" />
+        <property name="username" value="${db.username:postgres}" />
+        <property name="password" value="${db.password:}" />
+    </bean>
+
+    <!-- 4. Configuration JPA EntityManagerFactory (Hibernate) -->
+    <bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+        <property name="dataSource" ref="dataSource" />
+        <property name="packagesToScan" value="ma.wegrow.entity" />
+        <property name="jpaVendorAdapter">
+            <bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+                <property name="generateDdl" value="true" />
+                <property name="showSql" value="true" />
+            </bean>
+        </property>
+        <property name="jpaProperties">
+            <props>
+                <prop key="hibernate.dialect">org.hibernate.dialect.PostgreSQLDialect</prop>
+                <prop key="hibernate.hbm2ddl.auto">update</prop>
+                <prop key="hibernate.show_sql">true</prop>
+                <prop key="hibernate.format_sql">true</prop>
+            </props>
+        </property>
+    </bean>
+
+    <!-- 5. Gestionnaire de transactions JPA -->
+    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+        <property name="entityManagerFactory" ref="entityManagerFactory" />
+    </bean>
+
+    <!-- 6. Activation des annotations transactionnelles (@Transactional) -->
+    <tx:annotation-driven transaction-manager="transactionManager" />
+
+    <!-- 7. Activation des Repositories Spring Data JPA -->
+    <jpa:repositories base-package="ma.wegrow.repository" />
+
+    <!-- 8. Déclaration des Beans de Service (avec injection des Repositories par constructeur) -->
+    <bean id="departementService" class="ma.wegrow.service.impl.DepartementServiceImpl">
+        <constructor-arg ref="departementRepository" />
+        <constructor-arg ref="employeRepository" />
+    </bean>
+
+    <bean id="employeService" class="ma.wegrow.service.impl.EmployeServiceImpl">
+        <constructor-arg ref="departementRepository" />
+        <constructor-arg ref="employeRepository" />
+    </bean>
+
+    <!-- 9. Déclaration des Beans de Contrôleur (avec injection des Services par constructeur) -->
+    <bean id="departementController" class="ma.wegrow.controller.DepartementController">
+        <constructor-arg ref="departementService" />
+    </bean>
+
+    <bean id="employeController" class="ma.wegrow.controller.EmployeController">
+        <constructor-arg ref="employeService" />
+    </bean>
+
+    <!-- 10. Gestionnaire global des exceptions -->
+    <bean id="globalExceptionHandler" class="ma.wegrow.exception.GlobalExceptionHandler" />
+
+    <!-- 11. Bonus : Initialisation des données de test au démarrage de l'application -->
+    <bean id="dataInitializer" class="ma.wegrow.config.DataInitializer" init-method="init">
+        <constructor-arg ref="departementRepository" />
+        <constructor-arg ref="employeRepository" />
+    </bean>
+
+</beans>
