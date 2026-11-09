@@ -8,16 +8,9 @@ public class DepartementResponseDTO {
     private Long id;
     private String nom;
     private String description;
-    private long nombreEmployes;
+    private Long nombreEmployes;
 
     public DepartementResponseDTO() {
-    }
-
-    public DepartementResponseDTO(Long id, String nom, String description, long nombreEmployes) {
-        this.id = id;
-        this.nom = nom;
-        this.description = description;
-        this.nombreEmployes = nombreEmployes;
     }
 
     public DepartementResponseDTO(Long id, String nom, String description, Long nombreEmployes) {
@@ -51,11 +44,11 @@ public class DepartementResponseDTO {
         this.description = description;
     }
 
-    public long getNombreEmployes() {
+    public Long getNombreEmployes() {
         return nombreEmployes;
     }
 
-    public void setNombreEmployes(long nombreEmployes) {
+    public void setNombreEmployes(Long nombreEmployes) {
         this.nombreEmployes = nombreEmployes;
     }
 }
